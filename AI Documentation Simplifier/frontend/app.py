@@ -26,6 +26,7 @@ importlib.reload(services.audio_gen)
 from services.doc_parser import fetch_documentation
 from services.simplifier import simplify_feature
 from services.audio_gen import generate_narration
+from services.video_gen import generate_explainer_video
 from config import APP_TITLE, APP_DESCRIPTION
 
 # === Page Config ===
@@ -94,6 +95,8 @@ with col2:
     st.subheader("⚙️ Options")
     gen_audio = st.checkbox("🎙️ Generate audio narration (ElevenLabs)", value=True,
                            help="Natural human-like voice explains the feature")
+    gen_video = st.checkbox("🎬 Generate explainer video", value=False,
+                           help="Animated video with cartoon character + narration (FREE, requires audio)")
 
 st.subheader("📧 PM Email (Optional)")
 pm_email = st.text_area(
@@ -133,6 +136,20 @@ if st.button("🚀 Explain This Feature!", type="primary", use_container_width=T
                     audio_path = generate_narration(explanation["narration_script"], explanation["feature_name"])
                 except Exception as aud_err:
                     st.warning(f"⚠️ Audio skipped: {str(aud_err)[:100]}")
+
+            # Step 4: Generate video
+            video_path = None
+            if gen_video and audio_path:
+                status.info("🎬 Generating animated explainer video...")
+                try:
+                    video_path = generate_explainer_video(
+                        explanation["key_points"], explanation["feature_name"], audio_path
+                    )
+                except Exception as vid_err:
+                    st.warning(f"⚠️ Video skipped: {str(vid_err)[:100]}")
+            elif gen_video and not audio_path:
+                st.warning("⚠️ Video requires audio — enable audio generation first")
+
             progress.progress(100)
 
             status.success("✅ Done! Here's your feature explanation:")
@@ -149,6 +166,12 @@ if st.button("🚀 Explain This Feature!", type="primary", use_container_width=T
                 st.subheader("🎙️ Listen to Explanation")
                 st.audio(audio_path, format="audio/mp3")
                 st.caption("🗣️ Human-like voice powered by ElevenLabs")
+
+            # Video player
+            if video_path:
+                st.subheader("🎬 Watch Explainer Video")
+                st.video(video_path)
+                st.caption("🎥 Animated video generated locally (FREE — Manim + MoviePy)")
 
             # Simple explanation
             st.subheader("💡 Simple Explanation")
@@ -182,7 +205,7 @@ if st.button("🚀 Explain This Feature!", type="primary", use_container_width=T
             # Download section
             st.divider()
             st.subheader("📥 Download")
-            dl_cols = st.columns(2)
+            dl_cols = st.columns(3)
             with dl_cols[0]:
                 st.download_button(
                     "📄 Download Explanation (JSON)",
@@ -196,6 +219,12 @@ if st.button("🚀 Explain This Feature!", type="primary", use_container_width=T
                         st.download_button("🎙️ Download Audio (MP3)", f.read(),
                                           file_name=f"{explanation['feature_name']}.mp3",
                                           mime="audio/mpeg")
+            if video_path:
+                with dl_cols[2]:
+                    with open(video_path, "rb") as f:
+                        st.download_button("🎬 Download Video (MP4)", f.read(),
+                                          file_name=f"{explanation['feature_name']}.mp4",
+                                          mime="video/mp4")
 
         except Exception as e:
             progress.empty()
@@ -205,4 +234,4 @@ if st.button("🚀 Explain This Feature!", type="primary", use_container_width=T
 
 # === Footer ===
 st.divider()
-st.caption("Built with ❤️ using Amazon Bedrock (Claude Sonnet 4.6) & ElevenLabs | ~₹4 per explanation")
+st.caption("Built with ❤️ using Amazon Bedrock (Claude Sonnet 4.6), ElevenLabs & MoviePy | ~₹5 per explanation")

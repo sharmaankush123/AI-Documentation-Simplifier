@@ -1,176 +1,172 @@
 """
-services/video_gen.py — Uses Amazon Nova Reel to generate animated explainer videos.
+services/video_gen.py — Generates animated explainer videos using Manim + MoviePy.
 
-Nova Reel generates 6-second video clips from text prompts.
-Videos are stored in S3 and downloaded locally after generation.
+Pipeline:
+    1. Manim renders animated text slides from key points
+    2. Avatar image is composited as a "presenter" in the corner
+    3. MoviePy combines everything with the Polly/ElevenLabs audio track
 
-Requires:
-    - An S3 bucket for video output
-    - Bedrock access to amazon.nova-reel-v1:1 (us-east-1)
+Cost: FREE (all open-source, runs locally)
 """
 
-import json
-import time
-import boto3
+import subprocess
+import tempfile
+import textwrap
 from pathlib import Path
+from PIL import Image, ImageDraw, ImageFilter
+import numpy as np
+
+from moviepy import (
+    ImageClip, AudioFileClip, TextClip, CompositeVideoClip,
+    concatenate_videoclips, ColorClip
+)
+
 import sys
 sys.path.append("..")
-from config import VIDEO_S3_BUCKET, VIDEO_REGION, NOVA_REEL_MODEL_ID, OUTPUT_DIR
+from config import OUTPUT_DIR
 
-
-# Regions to try for Nova Reel (fallback order)
-VIDEO_REGIONS = [VIDEO_REGION, "us-west-2", "eu-west-1"]
-
-# Ensure output directory exists
 VIDEO_DIR = Path(OUTPUT_DIR) / "videos"
 VIDEO_DIR.mkdir(parents=True, exist_ok=True)
 
+AVATAR_PATH = Path(__file__).parent.parent / "assets" / "avatar.png"
+VIDEO_WIDTH, VIDEO_HEIGHT = 1280, 720
+FPS = 24
 
-def generate_feature_video(scene_description: str, feature_name: str = "feature", 
-                           duration_seconds: int = 6, wait_timeout: int = 300) -> str:
+# macOS font paths
+FONT_BOLD = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+FONT_REGULAR = "/System/Library/Fonts/Supplemental/Arial.ttf"
+if not Path(FONT_BOLD).exists():
+    FONT_BOLD = "/System/Library/Fonts/Helvetica.ttc"
+    FONT_REGULAR = "/System/Library/Fonts/Helvetica.ttc"
+
+
+def generate_explainer_video(key_points: list, feature_name: str, audio_path: str) -> str:
     """
-    Generate an animated video clip using Amazon Nova Reel.
+    Generate an animated explainer video from key points + audio.
 
     Args:
-        scene_description: Text describing the visual scene to generate
-        feature_name: Used for the output filename
-        duration_seconds: Video length (6, 12, 18, or 24 seconds — multiples of 6)
-        wait_timeout: Max seconds to wait for video generation (default 5 min)
+        key_points: List of strings (bullet points to animate)
+        feature_name: Name of the feature being explained
+        audio_path: Path to the narration MP3
 
     Returns:
-        Path to the downloaded MP4 file
+        Path to the final MP4 video
     """
-    # Try multiple regions as fallback
-    last_error = None
-    for region in VIDEO_REGIONS:
-        try:
-            return _generate_video_in_region(scene_description, feature_name, duration_seconds, wait_timeout, region)
-        except Exception as e:
-            last_error = e
-            print(f"   ⚠️ Region {region} failed: {str(e)[:80]}")
-            continue
-    
-    raise last_error or RuntimeError("All regions failed for video generation")
+    audio = AudioFileClip(audio_path)
+    total_duration = audio.duration
 
+    # Calculate time per slide
+    num_slides = len(key_points) + 1  # +1 for title slide
+    time_per_slide = total_duration / num_slides
 
-def _generate_video_in_region(scene_description: str, feature_name: str, 
-                              duration_seconds: int, wait_timeout: int, region: str) -> str:
-    """Generate video in a specific region."""
-    bedrock_runtime = boto3.client("bedrock-runtime", region_name=region)
-    s3_client = boto3.client("s3", region_name=region)
+    clips = []
 
-    # Clean feature name for S3 key
+    # Title slide
+    clips.append(_make_title_slide(feature_name, time_per_slide))
+
+    # Key point slides
+    for i, point in enumerate(key_points):
+        clips.append(_make_point_slide(point, i + 1, len(key_points), time_per_slide))
+
+    # Concatenate all slides
+    video = concatenate_videoclips(clips, method="compose")
+
+    # Add avatar overlay (bottom-right corner)
+    avatar_clip = _make_avatar_clip(total_duration)
+    final = CompositeVideoClip([video, avatar_clip])
+
+    # Set audio
+    final = final.with_audio(audio)
+
+    # Export
     safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in feature_name)[:40]
-    s3_output_prefix = f"feature-explainer/{safe_name}"
-    s3_uri = f"s3://{VIDEO_S3_BUCKET}/{s3_output_prefix}"
+    output_path = str(VIDEO_DIR / f"{safe_name}.mp4")
 
-    # Prepare the video generation request
-    model_input = {
-        "taskType": "TEXT_VIDEO",
-        "textToVideoParams": {
-            "text": scene_description
-        },
-        "videoGenerationConfig": {
-            "durationSeconds": duration_seconds,
-            "fps": 24,
-            "dimension": "1280x720",
-            "seed": 0
-        }
-    }
+    final.write_videofile(output_path, fps=FPS, codec="libx264", audio_codec="aac",
+                          logger=None, threads=4)
 
-    # Start async video generation job
-    print(f"🎬 Starting video generation in {region} for: {feature_name}")
-    print(f"   Scene: {scene_description[:80]}...")
-    print(f"   Duration: {duration_seconds}s | Output: {s3_uri}")
-
-    invocation = bedrock_runtime.start_async_invoke(
-        modelId=NOVA_REEL_MODEL_ID,
-        modelInput=model_input,
-        outputDataConfig={
-            "s3OutputDataConfig": {
-                "s3Uri": s3_uri
-            }
-        }
-    )
-
-    invocation_arn = invocation["invocationArn"]
-    print(f"   Job ARN: {invocation_arn}")
-
-    # Poll for completion
-    start_time = time.time()
-    while True:
-        elapsed = time.time() - start_time
-        if elapsed > wait_timeout:
-            raise TimeoutError(f"Video generation timed out after {wait_timeout}s")
-
-        status_response = bedrock_runtime.get_async_invoke(invocationArn=invocation_arn)
-        status = status_response["status"]
-
-        if status == "Completed":
-            print(f"   ✅ Video generated in {elapsed:.0f}s!")
-            break
-        elif status == "Failed":
-            failure_msg = status_response.get("failureMessage", "Unknown error")
-            raise RuntimeError(f"Video generation failed: {failure_msg}")
-        else:
-            # Still in progress
-            print(f"   ⏳ Generating... ({elapsed:.0f}s elapsed)")
-            time.sleep(15)  # Check every 15 seconds
-
-    # Download the video from S3
-    s3_video_key = f"{s3_output_prefix}/output.mp4"
-    local_path = VIDEO_DIR / f"{safe_name}.mp4"
-
-    print(f"   📥 Downloading from s3://{VIDEO_S3_BUCKET}/{s3_video_key}")
-    s3_client.download_file(VIDEO_S3_BUCKET, s3_video_key, str(local_path))
-    print(f"   ✅ Video saved: {local_path}")
-
-    return str(local_path)
-
-
-def combine_video_audio(video_path: str, audio_path: str, output_path: str = None) -> str:
-    """
-    Combine a video file with an audio narration track using ffmpeg.
-
-    Args:
-        video_path: Path to the video file (MP4)
-        audio_path: Path to the audio file (MP3)
-        output_path: Path for the combined output (optional)
-
-    Returns:
-        Path to the combined video file
-    """
-    import subprocess
-
-    if output_path is None:
-        output_path = str(VIDEO_DIR / "final_explainer.mp4")
-
-    # Use ffmpeg to combine video + audio
-    # -shortest: end when the shortest stream ends
-    cmd = [
-        "ffmpeg", "-y",  # overwrite output
-        "-i", video_path,    # video input
-        "-i", audio_path,    # audio input
-        "-c:v", "copy",      # copy video stream (no re-encode)
-        "-c:a", "aac",       # encode audio as AAC
-        "-shortest",         # end at shortest stream
-        output_path
-    ]
-
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise RuntimeError(f"ffmpeg failed: {result.stderr[:200]}")
-
-    print(f"   ✅ Final video with narration: {output_path}")
+    print(f"✅ Video saved: {output_path}")
     return output_path
 
 
+def _make_title_slide(title: str, duration: float) -> CompositeVideoClip:
+    """Create an animated title slide."""
+    bg = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=(35, 47, 62)).with_duration(duration)
+
+    # Title text
+    wrapped = textwrap.fill(title, width=35)
+    title_clip = TextClip(
+        text=wrapped,
+        font_size=48, color="white", font=FONT_BOLD,
+        size=(VIDEO_WIDTH - 300, VIDEO_HEIGHT - 200), method="caption"
+    ).with_duration(duration).with_position("center")
+
+    # Subtitle
+    sub = TextClip(
+        text="AI Feature Explainer", font_size=26, color="#FF9900", font=FONT_REGULAR,
+        size=(400, 50), method="caption"
+    ).with_duration(duration).with_position(("center", VIDEO_HEIGHT - 80))
+
+    return CompositeVideoClip([bg, title_clip, sub]).with_duration(duration)
+
+
+def _make_point_slide(point: str, index: int, total: int, duration: float) -> CompositeVideoClip:
+    """Create a slide for a single key point with animation."""
+    # Gradient-style background
+    colors = [(26, 35, 126), (0, 77, 64), (74, 20, 140), (21, 101, 192), (230, 81, 0)]
+    bg_color = colors[index % len(colors)]
+    bg = ColorClip(size=(VIDEO_WIDTH, VIDEO_HEIGHT), color=bg_color).with_duration(duration)
+
+    # Point number badge - positioned with safe margin
+    badge = TextClip(
+        text=f"  {index}/{total}  ", font_size=22, color="white",
+        bg_color="#FF9900", font=FONT_BOLD,
+        size=(100, 40), method="caption"
+    ).with_duration(duration).with_position((60, 40))
+
+    # Main point text - constrained to safe area with padding
+    wrapped = textwrap.fill(point, width=45)
+    point_clip = TextClip(
+        text=wrapped, font_size=36, color="white", font=FONT_REGULAR,
+        size=(VIDEO_WIDTH - 400, VIDEO_HEIGHT - 200), method="caption"
+    ).with_duration(duration).with_position(("center", "center"))
+
+    return CompositeVideoClip([bg, badge, point_clip]).with_duration(duration)
+
+
+def _make_avatar_clip(duration: float) -> ImageClip:
+    """Create the avatar overlay for bottom-right corner."""
+    if not AVATAR_PATH.exists():
+        # Return empty if no avatar
+        return ColorClip(size=(1, 1), color=(0, 0, 0, 0)).with_duration(duration).with_position((0, 0))
+
+    # Load and resize avatar
+    avatar = Image.open(AVATAR_PATH).convert("RGBA").resize((120, 120))
+
+    # Convert to numpy array for MoviePy
+    avatar_array = np.array(avatar)
+
+    clip = ImageClip(avatar_array, is_mask=False, transparent=True)
+    clip = clip.with_duration(duration)
+    clip = clip.with_position((VIDEO_WIDTH - 140, VIDEO_HEIGHT - 140))
+
+    return clip
+
+
 if __name__ == "__main__":
-    # Quick test
-    test_scene = (
-        "An animated visualization of a filing cabinet transforming into a highway, "
-        "with files flowing like cars between a cabinet and a computer screen. "
-        "Smooth camera dolly forward. Bright colors, clean modern style."
-    )
-    path = generate_feature_video(test_scene, "s3-files-test")
-    print(f"\nGenerated: {path}")
+    # Quick test with sample data
+    test_points = [
+        "S3 is like a giant filing cabinet in the cloud",
+        "You can store any file type — images, videos, backups",
+        "Pay only for what you store — no upfront costs",
+        "Access your files from anywhere with a URL",
+    ]
+
+    # Check if we have a test audio file
+    test_audio = Path(OUTPUT_DIR) / "audio" / "Amazon_S3_Files.mp3"
+    if test_audio.exists():
+        path = generate_explainer_video(test_points, "Amazon S3 Overview", str(test_audio))
+        print(f"\n🎬 Generated: {path}")
+    else:
+        print("⚠️ No test audio found. Run audio generation first.")
+        print(f"   Expected: {test_audio}")

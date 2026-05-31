@@ -26,7 +26,7 @@ TTS_ENGINE = "polly"
 
 # ElevenLabs (free tier: 10,000 chars/month — ~20 explanations)
 # Get your API key at: https://elevenlabs.io (sign up free)
-ELEVENLABS_API_KEY = ""
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
 
 # Amazon Polly (fallback — no extra setup needed)
 POLLY_VOICE_ID = "Ruth"      # Female, clear and expressive
