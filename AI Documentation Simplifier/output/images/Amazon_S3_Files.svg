@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <!-- Background warm gradient -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFF8F0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFE8C8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="floorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4A96A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#B8864E;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="warehouseGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#C8D8E8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A0B8CC;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="deskGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#E8C88A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#C8A060;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="shelfGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8B6040;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A07848;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-color="#00000033" />
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="1" dy="2" stdDeviation="5" flood-color="#00000022" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="url(#bgGrad)" />
+
+  <!-- Floor -->
+  <rect x="0" y="390" width="800" height="110" fill="url(#floorGrad)" rx="0" />
+  <!-- Floor shine line -->
+  <line x1="0" y1="392" x2="800" y2="392" stroke="#E8C07A" stroke-width="2" opacity="0.6" />
+
+  <!-- ===== WAREHOUSE BACKGROUND ===== -->
+  <!-- Warehouse building -->
+  <rect x="420" y="80" width="360" height="320" fill="url(#warehouseGrad)" rx="8" filter="url(#shadow)" />
+  <!-- Warehouse roof -->
+  <polygon points="410,80 790,80 790,65 600,40 410,65" fill="#8899AA" />
+  <!-- Warehouse door opening -->
+  <rect x="540" y="230" width="80" height="170" fill="#232F3E" rx="4" />
+  <!-- Door frame -->
+  <rect x="536" y="226" width="88" height="178" fill="none" stroke="#8B6040" stroke-width="4" rx="4" />
+
+  <!-- Warehouse shelves - back row -->
+  <!-- Shelf unit 1 -->
+  <rect x="435" y="110" width="90" height="200" fill="url(#shelfGrad)" rx="3" />
+  <rect x="435" y="110" width="90" height="8" fill="#6B4020" rx="2" />
+  <rect x="435" y="160" width="90" height="8" fill="#6B4020" rx="2" />
+  <rect x="435" y="210" width="90" height="8" fill="#6B4020" rx="2" />
+  <rect x="435" y="260" width="90" height="8" fill="#6B4020" rx="2" />
+  <rect x="435" y="302" width="90" height="8" fill="#6B4020" rx="2" />
+
+  <!-- Books/boxes on shelf 1 row 1 -->
+  <rect x="440" y="125" width="12" height="32" fill="#FF9900" rx="1" />
+  <rect x="455" y="128" width="10" height="29" fill="#1B8BDB" rx="1" />
+  <rect x="468" y="122" width="14" height="35" fill="#2E8B57" rx="1" />
+  <rect x="485" y="126" width="11" height="31" fill="#6B48FF" rx="1" />
+  <rect x="499" y="124" width="13" height="33" fill="#CC4444" rx="1" />
+  <rect x="515" y="127" width="9" height="30" fill="#FF9900" rx="1" />
+
+  <!-- Books on shelf 1 row 2 -->
+  <rect x="440" y="172" width="15" height="34" fill="#2E8B57" rx="1" />
+  <rect x="458" y="170" width="11" height="36" fill="#FF9900" rx="1" />
+  <rect x="472" y="174" width="13" height="32" fill="#1B8BDB" rx="1" />
+  <rect x="488" y="171" width="10" height="35" fill="#6B48FF" rx="1" />
+  <rect x="501" y="173" width="14" height="33" fill="#CC4444" rx="1" />
+  <rect x="518" y="172" width="9" height="34" fill="#2E8B57" rx="1" />
+
+  <!-- Boxes on shelf 1 row 3 -->
+  <rect x="440" y="220" width="20" height="36" fill="#D4A030" rx="2" />
+  <rect x="463" y="222" width="22" height="34" fill="#C87840" rx="2" />
+  <rect x="488" y="220" width="18" height="36" fill="#D4A030" rx="2" />
+  <rect x="509" y="221" width="20" height="35" fill="#C87840" rx="2" />
+
+  <!-- Boxes on shelf 1 row 4 -->
+  <rect x="440" y="270" width="24" height="28" fill="#A06830" rx="2" />
+  <rect x="467" y="272" width="20" height="26" fill="#C87840" rx="2" />
+  <rect x="490" y="270" width="22" height="28" fill="#A06830" rx="2" />
+  <rect x="515" y="271" width="12" height="27" fill="#D4A030" rx="2" />
+
+  <!-- Shelf unit 2 -->
+  <rect x="640" y="110" width="90" height="200" fill="url(#shelfGrad)" rx="3" />
+  <rect x="640" y="110" width="90" height="8" fill="#6B4020" rx="2" />
+  <rect x="640" y="160" width="90" height="8" fill="#6B4020" rx="2" />
+  <rect x="640" y="210" width="90" height="8" fill="#6B4020" rx="2" />
+  <rect x="640" y="260" width="90" height="8" fill="#6B4020" rx="2" />
+  <rect x="640" y="302" width="90" height="8" fill="#6B4020" rx="2" />
+
+  <!-- Books on shelf 2 row 1 -->
+  <rect x="645" y="123" width="11" height="34" fill="#1B8BDB" rx="1" />
+  <rect x="659" y="125" width="13" height="32" fill="#6B48FF" rx="1" />
+  <rect x="675" y="122" width="10" height="35" fill="#FF9900" rx="1" />
+  <rect x="688" y="124" width="14" height="33" fill="#2E8B57" rx="1" />
+  <rect x="705" y="126" width="12" height="31" fill="#CC4444" rx="1" />
+  <rect x="720" y="123" width="9" height="34" fill="#1B8BDB" rx="1" />
+
+  <!-- Books on shelf 2 row 2 -->
+  <rect x="645" y="171" width="14" height="35" fill="#CC4444" rx="1" />
+  <rect x="662" y="173" width="10" height="33" fill="#FF9900" rx="1" />
+  <rect x="675" y="170" width="13" height="36" fill="#2E8B57" rx="1" />
+  <rect x="691" y="172" width="11" height="34" fill="#6B48FF" rx="1" />
+  <rect x="705" y="171" width="15" height="35" fill="#1B8BDB" rx="1" />
+  <rect x="723" y="173" width="9" height="33" fill="#FF9900" rx="1" />
+
+  <!-- Boxes on shelf 2 rows -->
+  <rect x="645" y="220" width="22" height="36" fill="#C87840" rx="2" />
+  <rect x="670" y="222" width="18" height="34" fill="#D4A030" rx="2" />
+  <rect x="691" y="220" width="24" height="36" fill="#A06830" rx="2" />
+  <rect x="718" y="221" width="14" height="35" fill="#C87840" rx="2" />
+  <rect x="645" y="270" width="20" height="28" fill="#D4A030" rx="2" />
+  <rect x="668" y="272" width="24" height="26" fill="#A06830" rx="2" />
+  <rect x="695" y="270" width="18" height="28" fill="#C87840" rx="2" />
+  <rect x="716" y="271" width="16" height="27" fill="#D4A030" rx="2" />
+
+  <!-- Warehouse label sign -->
+  <rect x="555" y="95" width="90" height="22" fill="#232F3E" rx="4" />
+  <rect x="558" y="98" width="84" height="16" fill="#1B8BDB" rx="3" opacity="0.8" />
+  <!-- Small decorative lines on sign -->
+  <line x1="565" y1="106" x2="595" y2="106" stroke="white" stroke-width="2" opacity="0.7" />
+  <line x1="600" y1="106" x2="635" y2="106" stroke="white" stroke-width="2" opacity="0.7" />
+
+  <!-- ===== READING DESK FOREGROUND ===== -->
+  <!-- Desk surface -->
+  <rect x="60" y="340" width="280" height="55" fill="url(#deskGrad)" rx="6" filter="url(#shadow)" />
+  <!-- Desk front panel -->
+  <rect x="70" y="390" width="260" height="20" fill="#A07040" rx="4" />
+  <!-- Desk legs -->
+  <rect x="80" y="408" width="18" height="30" fill="#8B6030" rx="3" />
+  <rect x="302" y="408" width="18" height="30" fill="#8B6030" rx="3" />
+
+  <!-- Lamp on desk -->
+  <rect x="290" y="300" width="6" height="42" fill="#888" rx="2" />
+  <ellipse cx="293" cy="300" rx="18" ry="10" fill="#FFD060" opacity="0.9" />
+  <ellipse cx="293" cy="300" rx="18" ry="10" fill="none" stroke="#AA8820" stroke-width="2" />
+  <!-- Lamp glow -->
+  <ellipse cx="250" cy="345" rx="80" ry="30" fill="#FFE090" opacity="0.25" />
+
+  <!-- Open book on desk -->
+  <ellipse cx="190" cy="345" rx="70" ry="12" fill="#F5ECD0" />
+  <!-- Book spine -->
+  <line x1="190" y1="333" x2="190" y2="357" stroke="#C8A060" stroke-width="2" />
+  <!-- Book pages left -->
+  <path d="M120,345 Q155,330 190,333 L190,357 Q155,360 120,345 Z" fill="#FFFAF0" stroke="#D4B870" stroke-width="1" />
+  <!-- Book pages right -->
+  <path d="M260,345 Q225,330 190,333 L190,357 Q225,360 260,345 Z" fill="#FFF8E8" stroke="#D4B870" stroke-width="1" />
+  <!-- Text lines on book -->
+  <line x1="135" y1="340" x2="182" y2="337" stroke="#C8A060" stroke-width="1" opacity="0.5" />
+  <line x1="133" y1="345" x2="182" y2="343" stroke="#C8A060" stroke-width="1" opacity="0.5" />
+  <line x1="135" y1="350" x2="182" y2="349" stroke="#C8A060" stroke-width="1" opacity="0.5" />
+  <line x1="198" y1="337" x2="245" y2="340" stroke="#C8A060" stroke-width="1" opacity="0.5" />
+  <line x1="198" y1="343" x2="247" y2="345" stroke="#C8A060" stroke-width="1" opacity="0.5" />
+  <line x1="198" y1="349" x2="245" y2="350" stroke="#C8A060" stroke-width="1" opacity="0.5" />
+
+  <!-- ===== LIBRARIAN CHARACTER ===== -->
+  <!-- Librarian body -->
+  <!-- Legs -->
+  <rect x="355" y="340" width="14" height="55" fill="#4A6080" rx="4" />
+  <rect x="375" y="340" width="14" height="55" fill="#4A6080" rx="4" />
+  <!-- Shoes -->
+  <ellipse cx="362" cy="396" rx="10" ry="5" fill="#232F3E" />
+  <ellipse cx="382" cy="396" rx="10" ry="5" fill="#232F3E" />
+  <!-- Skirt/body lower -->
+  <path d="M348,290 Q360,345 355,345 L395,345 Q390,345 402,290 Z" fill="#6B48FF" />
+  <!-- Torso -->
+  <rect x="350" y="240" width="52" height="55" fill="#6B48FF" rx="6" />
+  <!--
