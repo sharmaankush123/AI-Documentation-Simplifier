@@ -143,7 +143,11 @@ if st.button("🚀 Explain This Feature!", type="primary", use_container_width=T
                 status.info("🎬 Generating animated explainer video...")
                 try:
                     video_path = generate_explainer_video(
-                        explanation["key_points"], explanation["feature_name"], audio_path
+                        explanation["narration_script"],
+                        explanation["feature_name"],
+                        audio_path,
+                        analogy=explanation.get("analogy", ""),
+                        key_points=explanation.get("key_points", [])
                     )
                 except Exception as vid_err:
                     st.warning(f"⚠️ Video skipped: {str(vid_err)[:100]}")
