@@ -3,7 +3,7 @@
 
 Generates AI-powered feature explanations with:
 - Claude Sonnet 4.6 (simplification + analogies)
-- ElevenLabs (human-like narration)
+- Amazon Polly (human-like narration)
 
 Run:
     streamlit run frontend/app.py
@@ -93,7 +93,7 @@ with col1:
 
 with col2:
     st.subheader("⚙️ Options")
-    gen_audio = st.checkbox("🎙️ Generate audio narration (ElevenLabs)", value=True,
+    gen_audio = st.checkbox("🎙️ Generate audio narration (Amazon Polly)", value=True,
                            help="Natural human-like voice explains the feature")
     gen_video = st.checkbox("🎬 Generate explainer video", value=False,
                            help="Animated video with cartoon character + narration (FREE, requires audio)")
@@ -169,7 +169,7 @@ if st.button("🚀 Explain This Feature!", type="primary", use_container_width=T
             if audio_path:
                 st.subheader("🎙️ Listen to Explanation")
                 st.audio(audio_path, format="audio/mp3")
-                st.caption("🗣️ Human-like voice powered by ElevenLabs")
+                st.caption("🗣️ Human-like voice powered by Amazon Polly (Generative)")
 
             # Video player
             if video_path:
@@ -238,4 +238,4 @@ if st.button("🚀 Explain This Feature!", type="primary", use_container_width=T
 
 # === Footer ===
 st.divider()
-st.caption("Built with ❤️ using Amazon Bedrock (Claude Sonnet 4.6), ElevenLabs & MoviePy | ~₹5 per explanation")
+st.caption("Built with ❤️ using Amazon Bedrock (Claude Sonnet 4.6), Amazon Polly & HyperFrames | ~₹5 per explanation")
