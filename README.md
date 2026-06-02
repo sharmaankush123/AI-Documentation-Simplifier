@@ -1,154 +1,186 @@
-# AI Documentation Simplifier
+# AI Documentation Simplifier v2.0
 
-This tool transforms complex AWS documentation into easy-to-understand feature explanations with human-like audio narration. It's designed for **Support Engineers** who need to quickly ramp up on new AWS features by providing simplified explanations, relatable analogies, troubleshooting tips, and natural-sounding audio walkthroughs.
+> Transforms complex AWS documentation into simplified explanations with **human-like audio narration** and **animated explainer videos** — all for ~₹5 per explanation.
 
-## Why This Tool?
+## 🎬 What It Does
 
-When a new AWS feature launches, engineers receive:
-- Dense technical documentation
-- Internal PM emails with troubleshooting context
-- Training materials that take hours to consume
+Paste an AWS docs URL → get a complete explainer package:
+- ✅ Simplified explanation with real-world analogy
+- ✅ Natural human-like audio narration (Amazon Polly)
+- ✅ **Animated explainer video** with motion graphics synced to narration (NEW in v2.0)
+- ✅ Key points, troubleshooting tips, gotchas
 
-This tool processes all of that in **~15 seconds** and produces:
-- A simplified explanation a 10-year-old could understand
-- A real-world analogy that makes the concept click
-- Key points engineers need to know
-- Troubleshooting tips extracted from internal emails
-- A **human-like audio narration** explaining it conversationally
-
-## How It Works
+## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ INPUT: Documentation URL + PM Email (optional)              │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 1. Doc Parser (BeautifulSoup)                               │
-│    Fetches URL → extracts clean text content                │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 2. AI Simplifier (Amazon Bedrock — Claude Sonnet 4.6)       │
-│    Simplifies → creates analogy → extracts tips → writes    │
-│    narration script                                         │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 3. Audio Generator (Amazon Polly — Generative Engine)       │
-│    Converts narration script → natural human-like MP3       │
-│    Voice: "Ruth" (Generative) — most natural Polly voice    │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│ OUTPUT: Simplified explanation + Audio narration + Tips      │
-│ Displayed in Streamlit web UI with download options          │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                            USER INPUT                                         │
+│  Documentation URL + PM Email (optional)                                     │
+└───────────────────────────────┬──────────────────────────────────────────────┘
+                                │
+                                ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  STEP 1: Doc Parser (BeautifulSoup)                                          │
+│  Fetches URL → extracts clean text                                           │
+└───────────────────────────────┬──────────────────────────────────────────────┘
+                                │
+                                ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  STEP 2: AI Simplifier (Amazon Bedrock — Claude Sonnet 4.6)                  │
+│  Simplifies → analogy → key points → narration script                        │
+└───────────────────────────────┬──────────────────────────────────────────────┘
+                                │
+                    ┌───────────┴───────────┐
+                    ▼                       ▼
+┌──────────────────────────┐  ┌────────────────────────────────────────────────┐
+│  STEP 3: Audio Generator │  │  STEP 4: Video Generator (NEW v2.0)            │
+│  Amazon Polly (Ruth)     │  │                                                │
+│  Generative Engine       │  │  ┌──────────────────────────────────────────┐  │
+│  → Natural MP3 narration │  │  │ Claude plans scenes per narration        │  │
+│                          │  │  │ sentence with timed icons + text         │  │
+└────────────┬─────────────┘  │  └──────────────────┬───────────────────────┘  │
+             │                │                     ▼                           │
+             │                │  ┌──────────────────────────────────────────┐  │
+             │                │  │ HTML template + GSAP animations          │  │
+             │                │  │ SVG icons, transitions, motion effects   │  │
+             │                │  └──────────────────┬───────────────────────┘  │
+             │                │                     ▼                           │
+             │                │  ┌──────────────────────────────────────────┐  │
+             │                │  │ HyperFrames renders HTML → MP4           │  │
+             │                │  │ (headless Chrome, frame-by-frame)        │  │
+             │                │  └──────────────────┬───────────────────────┘  │
+             │                │                     ▼                           │
+             │                │  ┌──────────────────────────────────────────┐  │
+             │                │  │ ffmpeg combines video + audio → final MP4│  │
+             │                │  └──────────────────────────────────────────┘  │
+             │                └────────────────────────────────────────────────┘
+             ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  OUTPUT: Streamlit Web UI                                                    │
+│  • Text explanation + analogy + tips                                         │
+│  • Audio player (MP3)                                                        │
+│  • Video player (MP4) — animated, synced to narration                        │
+│  • Download buttons for all formats                                          │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Quick Start
+## 🛠️ Technology Stack & Why
+
+| Technology | Purpose | Why This Choice |
+|-----------|---------|-----------------|
+| **Amazon Bedrock (Claude Sonnet 4.6)** | Simplification + scene planning | Best reasoning for technical content; already in AWS ecosystem |
+| **Amazon Polly (Generative — Ruth)** | Text-to-speech narration | Most natural-sounding voice in AWS; no external API keys needed |
+| **HyperFrames** (open-source) | HTML → MP4 video rendering | Free, deterministic, renders GSAP animations frame-by-frame |
+| **GSAP** | Animation engine | Industry standard for web animations; seekable timelines |
+| **Streamlit** | Web UI | Fastest way to build data apps in Python; zero frontend code |
+| **BeautifulSoup** | Doc parsing | Reliable HTML extraction from any AWS docs page |
+| **ffmpeg** | Audio/video combining | Universal media tool; lossless stream copying |
+| **MoviePy** | Audio duration detection | Python-native audio metadata reading |
+
+### Why HyperFrames over alternatives?
+
+| Option | Cost | Quality | Why not |
+|--------|------|---------|---------|
+| Amazon Nova Reel | ~₹160/video | Unpredictable | No control over content, expensive |
+| Remotion | Free | Great | Requires React knowledge, complex setup |
+| Manim | Free | Good for math | Text-only animations, no rich motion graphics |
+| **HyperFrames** | **Free** | **YouTube-quality** | ✅ Claude writes HTML, renders to MP4 |
+
+## 🚀 Quick Start
+
+### Prerequisites
 
 ```bash
-# Clone or navigate to the project
-cd ~/Desktop/"AI Documentation Simplifier"
+# Check these are installed
+node --version    # Need v22+
+python3 --version # Need 3.9+
+ffmpeg -version   # Need ffmpeg
+aws sts get-caller-identity  # AWS credentials configured
+```
 
-# Create virtual environment and install dependencies
+### Installation
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/sharmaankush123/AI-Documentation-Simplifier.git
+cd AI-Documentation-Simplifier/AI\ Documentation\ Simplifier
+
+# 2. Install HyperFrames (video rendering)
+npm install -g hyperframes
+
+# 3. Set up Python environment
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# Run the web app
+# 4. Set environment variables (optional — for ElevenLabs TTS)
+export ELEVENLABS_API_KEY="your_key_here"
+```
+
+### Run the Web App
+
+```bash
+source venv/bin/activate
 streamlit run frontend/app.py
 ```
 
-Open **http://localhost:8501** in your browser.
+**Open → http://localhost:8501**
 
-## Prerequisites
+### How to Use
 
-| Requirement | How to verify |
-|-------------|--------------|
-| Python 3.9+ | `python3 --version` |
-| AWS CLI configured | `aws sts get-caller-identity` |
-| Bedrock access (Claude Sonnet 4.6) | Auto-enabled on first invocation |
-| Amazon Polly access | Enabled by default |
+1. Paste any AWS documentation URL (e.g., `https://docs.aws.amazon.com/AmazonS3/latest/userguide/upload-objects.html`)
+2. ✅ Check **"Generate audio narration"**
+3. ✅ Check **"Generate explainer video"**
+4. (Optional) Paste a PM email for troubleshooting tips
+5. Click **"🚀 Explain This Feature!"**
+6. Wait ~60-90 seconds for full generation
+7. Play the video, listen to audio, download any format
 
-### AWS Configuration
-
-```bash
-aws configure
-# Region: eu-west-1 (or your preferred region)
-# Output: json
-```
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 AI Documentation Simplifier/
-├── config.py              # ⚙️ All settings (models, voices, regions)
-├── main.py                # 📟 CLI version
-├── run.sh                 # 🚀 Quick start script
-├── requirements.txt       # 📦 Python dependencies
-├── README.md              # 📖 This file
-├── PROMPT_TO_RECREATE.md  # 🤖 Prompt to rebuild this app with any AI
-│
-├── services/              # 🔧 Core AI services
-│   ├── doc_parser.py      #    Fetches & extracts docs from URL
-│   ├── simplifier.py      #    Bedrock Claude — simplify + analogies
-│   ├── audio_gen.py       #    Amazon Polly Generative / ElevenLabs
-│   ├── image_gen.py       #    SVG diagram generation (via Claude)
-│   └── video_gen.py       #    Amazon Nova Reel (async video gen)
-│
-├── backend/               # 🔌 FastAPI server (API mode)
-│   └── app.py
-│
-├── frontend/              # 🖥️ Streamlit web UI
-│   └── app.py
-│
-└── output/                # 📁 Generated files
-    ├── images/
-    ├── audio/
-    └── videos/
+├── config.py              # All settings (models, voices, regions)
+├── main.py                # CLI version
+├── requirements.txt       # Python dependencies
+├── assets/
+│   └── avatar.png         # Cartoon character avatar
+├── services/
+│   ├── doc_parser.py      # URL → clean text extraction
+│   ├── simplifier.py      # Claude: simplify + analogy + narration script
+│   ├── audio_gen.py       # Polly/ElevenLabs → MP3
+│   └── video_gen.py       # Claude + HyperFrames → animated MP4
+├── frontend/
+│   └── app.py             # Streamlit web UI
+├── backend/
+│   └── app.py             # FastAPI (API mode)
+└── output/
+    ├── audio/             # Generated MP3 files
+    └── videos/            # Generated MP4 files
 ```
 
-## Configuration
+## ⚙️ Configuration
 
-All settings are in `config.py`:
+All settings in `config.py`:
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `AWS_REGION` | `eu-west-1` | AWS region for Bedrock Claude |
-| `CLAUDE_MODEL_ID` | `eu.anthropic.claude-sonnet-4-6` | LLM for simplification |
-| `TTS_ENGINE` | `polly` | `"polly"` or `"elevenlabs"` |
-| `POLLY_VOICE_ID` | `Ruth` | Female, expressive voice |
-| `POLLY_ENGINE` | `generative` | Most human-like Polly engine |
+| Setting | Default | Options |
+|---------|---------|---------|
+| `AWS_REGION` | `eu-west-1` | Any region with Bedrock access |
+| `CLAUDE_MODEL_ID` | `eu.anthropic.claude-sonnet-4-6` | Any Claude model ID |
+| `TTS_ENGINE` | `polly` | `polly` or `elevenlabs` |
+| `POLLY_VOICE_ID` | `Ruth` | `Ruth`, `Matthew`, etc. |
+| `POLLY_ENGINE` | `generative` | Most natural voice engine |
 
-### Available Polly Generative Voices
+## 💰 Cost Per Explanation
 
-| Voice | Gender | Style |
-|-------|--------|-------|
-| `Ruth` | Female | Clear, expressive (recommended) |
-| `Matthew` | Male | Warm, conversational |
+| Component | Cost | Notes |
+|-----------|------|-------|
+| Bedrock Claude (simplify + scenes) | ~₹2-3 | Two API calls |
+| Amazon Polly (audio) | ~₹1 | Generative engine |
+| Video rendering | **₹0** | Runs locally, open-source |
+| **Total** | **~₹4-5** | |
 
-> **Note:** Generative engine is only available in `us-east-1`. The app automatically routes Polly calls there.
-
-## Cost Per Explanation
-
-| Service | Cost | Notes |
-|---------|------|-------|
-| Bedrock Claude Sonnet 4.6 | ~$0.01-0.03 | Depends on doc length |
-| Amazon Polly (Generative) | ~$0.016 per 1000 chars | ~$0.03 for 2-min narration |
-| **Total** | **~$0.04-0.06** | Less than ₹5 per explanation |
-
-## Usage
-
-### Web UI (Recommended)
-```bash
-streamlit run frontend/app.py
-```
+## 🔄 Alternative Run Modes
 
 ### CLI Mode
 ```bash
@@ -158,41 +190,24 @@ python main.py
 ### API Mode (FastAPI)
 ```bash
 uvicorn backend.app:app --reload --port 8000
-# Interactive docs at http://localhost:8000/docs
+# Docs: http://localhost:8000/docs
 ```
 
-## Example Output
+## 📝 Technical Notes
 
-**Input:** `https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-files.html`
+- **Polly Generative Engine** only available in `us-east-1` — app routes there automatically
+- **HyperFrames** requires Node.js 22+ and uses headless Chrome for rendering
+- **Video generation** takes ~60s for a 2-minute video (3870 frames at 30fps)
+- **Scene planning** uses low temperature (0.2) so visuals match narration precisely
 
-**Output:**
-- 📌 **Feature:** Amazon S3 Files
-- 💡 **Explanation:** S3 Files lets you access your S3 data as a file system without copying it...
-- 🎯 **Analogy:** It's like having a library card that lets you read books directly on the shelf without checking them out...
-- 📋 **Key Points:** 5-7 bullets
-- 🔧 **Troubleshooting Tips:** Extracted from PM email
-- 🎙️ **Audio:** 1-2 minute MP3 narration in natural human voice
+## 🗺️ Roadmap
 
-## Future Enhancements
-
-- [ ] AI-generated explainer video (D-ID / Runway ML / Nova Reel)
-- [ ] AI image generation (when Bedrock image models return)
-- [ ] History — browse past explanations
-- [ ] Batch mode — process multiple features at once
-- [ ] Team sharing — export as HTML/PDF
-- [ ] Slack integration — explain features from Slack commands
-
-## Technical Notes
-
-- **Bedrock API:** Uses `converse()` API (not `invoke_model`) for Claude — required for cross-region inference profiles
-- **Polly Region:** Generative engine only available in `us-east-1` — app routes there automatically
-- **Model IDs:** Use `eu.anthropic.claude-sonnet-4-6` format for EU, `us.anthropic.claude-sonnet-4-6` for US
-- **Image/Video Models:** All Bedrock media generation models (Titan Image, Nova Canvas, Nova Reel) marked LEGACY as of May 2026
-
-## License
-
-MIT-0 — See LICENSE
+- [ ] Animated cartoon characters (SadTalker lip-sync when deps mature)
+- [ ] Multiple video styles (whiteboard, corporate, playful)
+- [ ] Batch processing — explain multiple features at once
+- [ ] Slack bot integration
+- [ ] PDF/HTML export of explanations
 
 ## Author
 
-Ankush Singh (singholr@amazon.com)
+Ankush Sharma — [GitHub](https://github.com/sharmaankush123)
